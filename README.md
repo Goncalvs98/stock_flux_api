@@ -6,6 +6,6 @@ A API é desenvolvida em Flask para manipular e exibir os dados.
 
 ## Web
 
-[https://github.com/Goncalvs98/stock_flux_api.git](https://github.com/Goncalvs98/stock_flux.git)
+[https://github.com/Goncalvs98/stock_flux.git](https://github.com/Goncalvs98/stock_flux.git)
 
 ## Funcionalidades
