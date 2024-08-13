@@ -72,6 +72,37 @@ estoque_model = api.model('Estoque',{
     "Motivo": fields.String(required=True, description='Motivo do estoque'),
 })
 
+etapas_producao_model = api.model('Etapas_Producao',{
+    "Id": fields.Integer(required=True, description='Id da etapa da produção'),
+    "Descrição": fields.String(required=True, description='Descrição da etapa da produção'),
+    "Prazo Estimado": fields.Integer(required=True, description='Prazo Estimado da etapa da produção'),
+})
+
+producao_model = api.model('Producao',{
+    "Id": fields.Integer(required=True, description='Id da produção'),
+    "Medicamento": fields.String(required=True, description='Medicamento da produção'),
+    "Etapa": fields.String(required=True, description='Etapa da produção'),
+    "Data Início": fields.DateTime(required=True, description='Data Início da produção'),
+    "Data Fim Prevista": fields.DateTime(required=True, description='Data Fim Prevista da produção'),
+    "Data Fim Real": fields.DateTime(required=True, description='Data Fim Real da produção'),
+})
+
+entradas_previstas_model = api.model('EntradasPrevistas',{
+    "Id": fields.Integer(required=True, description='Id da entrada prevista'),
+    "Material": fields.String(required=True, description='Material da entrada prevista'),
+    "Medicamento": fields.String(required=True, description='Descrição da entrada prevista'),
+    "Quantidade": fields.Integer(required=True, description='Quantidade da entrada prevista'),
+    "Data Prevista": fields.DateTime(required=True, description='Data Prevista da entrada prevista'),
+})
+
+atrasos_producao_model = api.model('AtrasosProducao',{
+    "Id": fields.Integer(required=True, description='Id do atraso'),
+    "Medicamento": fields.String(required=True, description='Medicamento da produção em atraso'),
+    "Etapa": fields.String(required=True, description='etapa da produção em atraso'),
+    "Dias de Atraso": fields.Integer(required=True, description='Dias de Atraso'),
+    "Motivo": fields.String(required=True, description='Motivo do atraso'),
+})
+
 # Função para carregar credenciais a partir de um arquivo JSON
 def load_credentials():
     with open('credentials.json') as f:
@@ -313,6 +344,121 @@ class EstoqueResource(Resource):
         cursor.close()
         connection.close()
         return estoque
+
+# Etapas Produção
+@ns.route('/etapas_producao')
+class EtapasProducaoResource(Resource):
+    @ns.doc('list_etapas_producao')
+    @ns.marshal_list_with(etapas_producao_model)
+    def get(self):
+        connection = get_db_connection()
+        cursor = connection.cursor()
+        cursor.execute("SELECT id_etapa, descricao, prazo_estimado FROM rm93069.etapas_producao")
+        rows = cursor.fetchall()
+
+        etapas_producao = []
+        for row in rows:
+            etapa = {
+                "ID Etapa": row[0],
+                "Descrição": row[1],
+                "Prazo Estimado (dias)": row[2],
+            }
+            etapas_producao.append(etapa)
+
+        cursor.close()
+        connection.close()
+        return etapas_producao
+
+# Produção
+@ns.route('/producao')
+class ProducaoResource(Resource):
+    @ns.doc('list_producao')
+    @ns.marshal_list_with(producao_model)
+    def get(self):
+        connection = get_db_connection()
+        cursor = connection.cursor()
+        cursor.execute(
+            "SELECT id_producao, m.nome, ep.descricao, data_inicio, data_fim_prevista, data_fim_real "
+            "FROM rm93069.producao p "
+            "join rm93069.medicamentos m on p.id_medicamento = m.id_medicamento "
+            "join rm93069.etapas_producao ep on p.id_etapa = ep.id_etapa")
+        rows = cursor.fetchall()
+
+        producao = []
+        for row in rows:
+            producao_item = {
+                "Id": row[0],
+                "Medicamento": row[1],
+                "Etapa": row[2],
+                "Data Início": row[3],
+                "Data Fim Prevista": row[4],
+                "Data Fim Real": row[5],
+            }
+            producao.append(producao_item)
+
+        cursor.close()
+        connection.close()
+        return producao
+
+# Entradas Previstas
+@ns.route('/entradas_previstas')
+class EntradasPrevistasResource(Resource):
+    @ns.doc('list_entradas_previstas')
+    @ns.marshal_list_with(entradas_previstas_model)
+    def get(self):
+        connection = get_db_connection()
+        cursor = connection.cursor()
+        cursor.execute(
+            "SELECT id_entrada_prevista, ma.descricao, m.nome, quantidade, data_prevista "
+            "FROM rm93069.entradas_previstas ep "
+            "join rm93069.medicamentos m on ep.id_medicamento = m.id_medicamento "
+            "join rm93069.materiais ma on ep.id_material = ma.id_material")
+        rows = cursor.fetchall()
+
+        entradas_previstas = []
+        for row in rows:
+            entrada = {
+                "Id": row[0],
+                "Material": row[1],
+                "Medicamento": row[2],
+                "Quantidade": row[3],
+                "Data Prevista": row[4],
+            }
+            entradas_previstas.append(entrada)
+
+        cursor.close()
+        connection.close()
+        return entradas_previstas
+
+# Atrasos Produção
+@ns.route('/atrasos_produção')
+class AtrasosProducaoResource(Resource):
+    @ns.doc('list_atrasos_produção')
+    @ns.marshal_list_with(atrasos_producao_model)
+    def get(self):
+        connection = get_db_connection()
+        cursor = connection.cursor()
+        cursor.execute("SELECT id_atraso, m.nome, ep.descricao, dias_atraso, motivo "
+                       "FROM rm93069.atrasos_producao ap "
+                       "join rm93069.producao p on p.id_producao = ap.id_producao "
+                       "join rm93069.medicamentos m on p.id_medicamento = m.id_medicamento "
+                       "join rm93069.etapas_producao ep on p.id_etapa = ep.id_etapa")
+        rows = cursor.fetchall()
+
+        atrasos_producao = []
+        for row in rows:
+            atraso = {
+                "Id": row[0],
+                "Medicamento": row[1],
+                "Etapa": row[2],
+                "Dias de Atraso": row[3],
+                "Motivo": row[4],
+            }
+            atrasos_producao.append(atraso)
+
+        cursor.close()
+        connection.close()
+        return atrasos_producao
 
 # Ponto de entrada da aplicação
 if __name__ == '__main__':
