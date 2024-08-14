@@ -1,4 +1,4 @@
-from flask import Flask, jsonify
+from flask import Flask, request
 from flask_restx import Api, Resource, fields
 from flask_cors import CORS
 import oracledb
@@ -120,15 +120,35 @@ class MedicamentoResource(Resource):
     @ns.doc('list_medicamentos')
     @ns.marshal_list_with(medicamento_model)
     def get(self):
+        categoria_id = request.args.get('categoria_id')
+        motivo_id = request.args.get('motivo_id')
+        status_id = request.args.get('status_id')
+        medicamento_nome = request.args.get('medicamento_nome')
+
         connection = get_db_connection()
         cursor = connection.cursor()
-        cursor.execute("SELECT c.descricao AS Categoria, mt.descricao AS Motivo, nome, codigo, quantidade_minima, localizacao, s.descricao AS Status "
-                       "FROM rm93069.medicamentos m "
-                       "JOIN rm93069.categorias c ON m.id_categoria = c.id_categoria "
-                       "JOIN rm93069.motivos mt ON m.id_motivo = mt.id_motivo "
-                       "JOIN rm93069.status_medicamento sm ON m.id_medicamento = sm.id_medicamento "
-                       "JOIN rm93069.status s ON sm.id_status = s.id_status")
-        rows = cursor.fetchall()
+
+        # Preparar a consulta para chamar a função e retornar o SYS_REFCURSOR
+        query = """
+            BEGIN
+                :ref_cursor := get_medicamentos(:categoria, :motivo, :status, :medicamento);
+            END;
+        """
+
+        # Criação de um cursor de referência para armazenar o resultado
+        ref_cursor = cursor.var(oracledb.CURSOR)
+
+        # Executar a consulta passando os parâmetros necessários
+        cursor.execute(query, {
+            "ref_cursor": ref_cursor,
+            "categoria": categoria_id,
+            "motivo": motivo_id,
+            "status": status_id,
+            "medicamento": medicamento_nome
+        })
+
+        # Obter os resultados do cursor retornado
+        rows = ref_cursor.getvalue().fetchall()
 
         medicamentos = []
         for row in rows:
@@ -171,6 +191,59 @@ class StatusResource(Resource):
         connection.close()
         return status_list
 
+    @ns.doc('create_status')
+    @ns.expect(status_model)
+    def post(self):
+        data = ns.payload  # Captura os dados enviados no corpo da requisição
+        connection = get_db_connection()
+        cursor = connection.cursor()
+
+        sql_insert = """INSERT INTO rm93069.status (id_status, descricao, motivo) 
+                            VALUES (:1, :2, :3)"""
+        cursor.execute(sql_insert, (data['Id'], data['Descrição'], data['Motivo']))
+
+        connection.commit()  # Confirma a transação
+
+        cursor.close()
+        connection.close()
+
+        return {'message': 'Status inserido com sucesso!'}, 201
+
+    @ns.doc('update_status')
+    @ns.expect(status_model)
+    def put(self):
+        data = ns.payload  # Captura os dados enviados no corpo da requisição
+        connection = get_db_connection()
+        cursor = connection.cursor()
+
+        sql_update = """UPDATE rm93069.status
+                            SET descricao = :1, motivo = :2 
+                            WHERE id_status = :3"""
+        cursor.execute(sql_update, (data['Descrição'], data['Motivo'], data['Id']))
+
+        connection.commit()  # Confirma a transação
+
+        cursor.close()
+        connection.close()
+
+        return {'message': 'Status atualizado com sucesso!'}
+
+    @ns.doc('delete_status')
+    def delete(self):
+        data = ns.payload  # Captura os dados enviados no corpo da requisição
+        connection = get_db_connection()
+        cursor = connection.cursor()
+
+        sql_delete = "DELETE FROM rm93069.status WHERE id_status = :1"
+        cursor.execute(sql_delete, (data['Id'],))
+
+        connection.commit()  # Confirma a transação
+
+        cursor.close()
+        connection.close()
+
+        return {'message': 'Status deletado com sucesso!'}
+
 # Fornecedores
 @ns.route('/fornecedores')
 class FornecedorResource(Resource):
@@ -196,6 +269,59 @@ class FornecedorResource(Resource):
         connection.close()
         return fornecedores
 
+    @ns.doc('create_fornecedores')
+    @ns.expect(fornecedores_model)
+    def post(self):
+        data = ns.payload  # Captura os dados enviados no corpo da requisição
+        connection = get_db_connection()
+        cursor = connection.cursor()
+
+        sql_insert = """INSERT INTO rm93069.fornecedores (id_fornecedor, nome, telefone, email) 
+                            VALUES (:1, :2, :3, :4)"""
+        cursor.execute(sql_insert, (data['Id'], data['Nome'], data['Telefone'], data['Email']))
+
+        connection.commit()  # Confirma a transação
+
+        cursor.close()
+        connection.close()
+
+        return {'message': 'Status inserido com sucesso!'}, 201
+
+    @ns.doc('update_fornecedores')
+    @ns.expect(fornecedores_model)
+    def put(self):
+        data = ns.payload  # Captura os dados enviados no corpo da requisição
+        connection = get_db_connection()
+        cursor = connection.cursor()
+
+        sql_update = """UPDATE rm93069.fornecedores
+                            SET nome = :1, telefone = :2,  email = :3
+                            WHERE id_fornecedor = :4"""
+        cursor.execute(sql_update, (data['Nome'], data['Telefone'], data['Email'], data['Id']))
+
+        connection.commit()  # Confirma a transação
+
+        cursor.close()
+        connection.close()
+
+        return {'message': 'Status atualizado com sucesso!'}
+
+    @ns.doc('delete_fornecedores')
+    def delete(self):
+        data = ns.payload  # Captura os dados enviados no corpo da requisição
+        connection = get_db_connection()
+        cursor = connection.cursor()
+
+        sql_delete = "DELETE FROM rm93069.fornecedores WHERE id_fornecedor = :1"
+        cursor.execute(sql_delete, (data['Id'],))
+
+        connection.commit()  # Confirma a transação
+
+        cursor.close()
+        connection.close()
+
+        return {'message': 'Status deletado com sucesso!'}
+
 # Materiais
 @ns.route('/materiais')
 class MaterialResource(Resource):
@@ -219,6 +345,59 @@ class MaterialResource(Resource):
         cursor.close()
         connection.close()
         return materiais
+
+    @ns.doc('create_materiais')
+    @ns.expect(materiais_model)
+    def post(self):
+        data = ns.payload  # Captura os dados enviados no corpo da requisição
+        connection = get_db_connection()
+        cursor = connection.cursor()
+
+        sql_insert = """INSERT INTO rm93069.materiais (id_material, id_fornecedor, descricao) 
+                                VALUES (:1, :2, :3)"""
+        cursor.execute(sql_insert, (data['Id'], data['Id_Fornecedor'], data['Descricao']))
+
+        connection.commit()  # Confirma a transação
+
+        cursor.close()
+        connection.close()
+
+        return {'message': 'Status inserido com sucesso!'}, 201
+
+    @ns.doc('update_materiais')
+    @ns.expect(materiais_model)
+    def put(self):
+        data = ns.payload  # Captura os dados enviados no corpo da requisição
+        connection = get_db_connection()
+        cursor = connection.cursor()
+
+        sql_update = """UPDATE rm93069.materiais
+                                SET id_fornecedor = :2,  descricao = :3
+                                WHERE id_material = :1"""
+        cursor.execute(sql_update, (data['Id'], data['Id_Fornecedor'], data['Descricao'],))
+
+        connection.commit()  # Confirma a transação
+
+        cursor.close()
+        connection.close()
+
+        return {'message': 'Status atualizado com sucesso!'}
+
+    @ns.doc('delete_materiais')
+    def delete(self):
+        data = ns.payload  # Captura os dados enviados no corpo da requisição
+        connection = get_db_connection()
+        cursor = connection.cursor()
+
+        sql_delete = "DELETE FROM rm93069.materiais WHERE id_material = :1"
+        cursor.execute(sql_delete, (data['Id'],))
+
+        connection.commit()  # Confirma a transação
+
+        cursor.close()
+        connection.close()
+
+        return {'message': 'Status deletado com sucesso!'}
 
 # Categorias
 @ns.route('/categorias')
@@ -303,7 +482,7 @@ class DepartamentoResource(Resource):
         departamentos = []
         for row in rows:
             departamento = {
-                "ID Departamento": row[0],
+                "Id": row[0],
                 "Descrição": row[1],
             }
             departamentos.append(departamento)
