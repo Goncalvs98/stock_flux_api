@@ -14,6 +14,8 @@ CORS(app)
 
 ns = api.namespace('api', description='Operações relacionadas às tabelas')
 
+api.add_namespace(ns)
+
 # Instancia o chatbot
 bot = ChatBot()
 
@@ -105,6 +107,11 @@ atrasos_producao_model = api.model('AtrasosProducao',{
     "Etapa": fields.String(required=True, description='etapa da produção em atraso'),
     "Dias de Atraso": fields.Integer(required=True, description='Dias de Atraso'),
     "Motivo": fields.String(required=True, description='Motivo do atraso'),
+})
+
+# Define o modelo para a entrada do chatbot
+chat_message_model = ns.model('ChatMessage', {
+    'message': fields.String(required=True, description='A mensagem do usuário')
 })
 
 # Função para carregar credenciais a partir de um arquivo JSON
@@ -642,17 +649,21 @@ class AtrasosProducaoResource(Resource):
         cursor.close()
         connection.close()
         return atrasos_producao
-
-@app.route('/chatbot', methods=['POST'])
-def chatbot():
-    data = request.json
-    user_message = data.get("message")
-
-    # Obtenha a resposta do chatbot utilizando o método `get_response`
-    bot_response = bot.get_response(user_message)
     
-    return {"response": bot_response}
+# ChatBot
+@ns.route('/chatbot')
+class ChatBotResource(Resource):
+    @ns.doc('chat')
+    @ns.expect(chat_message_model)  # Utilize o modelo definido
+    def post(self):
+        data = request.json
+        user_message = data.get("message")
 
+        # Obtenha a resposta do chatbot utilizando o método `get_response`
+        bot_response = bot.get_response(user_message)
+        
+        return {"response": bot_response}
+    
 # Ponto de entrada da aplicação
 if __name__ == '__main__':
     app.run(debug=True)

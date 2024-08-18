@@ -6,13 +6,21 @@ import nltk
 from nltk.stem import WordNetLemmatizer
 from tensorflow.keras.models import load_model
 
+
+
 class ChatBot:
     def __init__(self):
         nltk.download('punkt')
         nltk.download('wordnet')
 
         self.lemmatizer = WordNetLemmatizer()
-        self.intents = json.loads(open('intents.json').read())
+
+        # Carregue os intents do arquivo JSON com a codificação UTF-8
+        with open('intents.json', encoding='utf-8') as json_data:
+            self.intents = json.load(json_data)
+
+        # Carregue os intents do arquivo JSON com a codificação UTF-8
+        self.intents = json.loads(open('intents.json', encoding='utf-8').read())
         self.palavras = pickle.load(open('palavras.pkl', 'rb'))
         self.classes = pickle.load(open('classes.pkl', 'rb'))
         self.model = load_model('chatbotmodel.h5')
