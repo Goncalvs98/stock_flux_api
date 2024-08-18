@@ -3,6 +3,7 @@ from flask_restx import Api, Resource, fields
 from flask_cors import CORS
 import oracledb
 import json
+from chatbot import ChatBot  # Importa a classe ChatBot
 
 app = Flask(__name__)
 api = Api(app, version='1.0', title='API StockFlux',
@@ -12,6 +13,9 @@ api = Api(app, version='1.0', title='API StockFlux',
 CORS(app)
 
 ns = api.namespace('api', description='Operações relacionadas às tabelas')
+
+# Instancia o chatbot
+bot = ChatBot()
 
 medicamento_model = api.model('Medicamento', {
     'Categoria': fields.String(required=True, description='Categoria do medicamento'),
@@ -638,6 +642,16 @@ class AtrasosProducaoResource(Resource):
         cursor.close()
         connection.close()
         return atrasos_producao
+
+@app.route('/chatbot', methods=['POST'])
+def chatbot():
+    data = request.json
+    user_message = data.get("message")
+
+    # Obtenha a resposta do chatbot utilizando o método `get_response`
+    bot_response = bot.get_response(user_message)
+    
+    return {"response": bot_response}
 
 # Ponto de entrada da aplicação
 if __name__ == '__main__':

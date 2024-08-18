@@ -1,5 +1,9 @@
 # Ignorar o arquivo de credenciais
 credentials.json
+intents.json
+palavras.pkl
+classes.pkl
+chatbotmodel.h5
 
 # Ignorar outros arquivos ou diretórios gerados que não devem ser versionados
 __pycache__/
