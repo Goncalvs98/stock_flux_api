@@ -284,6 +284,7 @@ class FornecedorResource(Resource):
             END;
         """
 
+        # Criação da variável para armazenar o cursor de referência
         ref_cursor = cursor.var(oracledb.CURSOR)
 
         cursor.execute(query, {
@@ -291,7 +292,11 @@ class FornecedorResource(Resource):
             "fornecedor": fornecedor,
         })
 
-        rows = cursor.fetchall()
+        # Agora, usamos o cursor da variável ref_cursor
+        result_cursor = ref_cursor.getvalue()
+
+        # Fetchall no cursor resultante da execução da função PL/SQL
+        rows = result_cursor.fetchall()
 
         fornecedores = []
         for row in rows:
@@ -386,7 +391,9 @@ class MaterialResource(Resource):
             "fornecedor": fornecedor,
         })
 
-        rows = cursor.fetchall()
+        result_cursor = ref_cursor.getvalue()
+
+        rows = result_cursor.fetchall()
 
         materiais = []
         for row in rows:
@@ -478,7 +485,9 @@ class CategoriaResource(Resource):
             "categoria": categoria,
         })
 
-        rows = cursor.fetchall()
+        result_cursor = ref_cursor.getvalue()
+
+        rows = result_cursor.fetchall()
 
         categorias = []
         for row in rows:
@@ -516,7 +525,9 @@ class MotivoResource(Resource):
             "motivo": motivo,
         })
 
-        rows = cursor.fetchall()
+        result_cursor = ref_cursor.getvalue()
+
+        rows = result_cursor.fetchall()
 
         motivos = []
         for row in rows:
