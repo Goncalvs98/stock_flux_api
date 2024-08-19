@@ -565,7 +565,7 @@ class CargoResource(Resource):
             "cargo": cargo,
         })
 
-        rows = cursor.fetchall()
+        rows = ref_cursor.getvalue().fetchall()
 
         cargos = []
         for row in rows:
@@ -603,7 +603,7 @@ class DepartamentoResource(Resource):
             "departamento": departamento,
         })
 
-        rows = cursor.fetchall()
+        rows = ref_cursor.getvalue().fetchall()
 
         departamentos = []
         for row in rows:
@@ -647,7 +647,7 @@ class EstoqueResource(Resource):
             "tipo_movimentacao": tipo_movimentacao,
         })
 
-        rows = cursor.fetchall()
+        rows = ref_cursor.getvalue().fetchall()
 
         estoque = []
         for row in rows:
@@ -690,7 +690,7 @@ class EtapasProducaoResource(Resource):
             "etapa": etapa,
         })
 
-        rows = cursor.fetchall()
+        rows = ref_cursor.getvalue().fetchall()
 
         etapas_producao = []
         for row in rows:
@@ -733,7 +733,7 @@ class ProducaoResource(Resource):
             "etapa": etapa,
         })
 
-        rows = cursor.fetchall()
+        rows = ref_cursor.getvalue().fetchall()
 
         producao = []
         for row in rows:
@@ -779,7 +779,7 @@ class EntradasPrevistasResource(Resource):
             "medicamento": medicamento,
         })
 
-        rows = cursor.fetchall()
+        rows = ref_cursor.getvalue().fetchall()
 
         entradas_previstas = []
         for row in rows:
@@ -826,7 +826,7 @@ class AtrasosProducaoResource(Resource):
             "etapa": etapa,
         })
 
-        rows = cursor.fetchall()
+        rows = ref_cursor.getvalue().fetchall()
 
         atrasos_producao = []
         for row in rows:
