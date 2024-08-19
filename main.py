@@ -109,17 +109,14 @@ atrasos_producao_model = api.model('AtrasosProducao',{
     "Motivo": fields.String(required=True, description='Motivo do atraso'),
 })
 
-# Define o modelo para a entrada do chatbot
 chat_message_model = ns.model('ChatMessage', {
     'message': fields.String(required=True, description='A mensagem do usuário')
 })
 
-# Função para carregar credenciais a partir de um arquivo JSON
 def load_credentials():
     with open('credentials.json') as f:
         return json.load(f)
 
-# Função para obter a conexão com o banco de dados
 def get_db_connection():
     credentials = load_credentials()
     connection = oracledb.connect(user=credentials['user'], password=credentials['password'], dsn=credentials['dsn'])
@@ -131,10 +128,10 @@ class MedicamentoResource(Resource):
     @ns.doc('list_medicamentos')
     @ns.marshal_list_with(medicamento_model)
     def get(self):
-        categoria_id = request.args.get('categoria_id')
-        motivo_id = request.args.get('motivo_id')
-        status_id = request.args.get('status_id')
-        medicamento_nome = request.args.get('medicamento_nome')
+        categoria = request.args.get('categoria_id')
+        motivo = request.args.get('motivo_id')
+        status = request.args.get('status_id')
+        medicamento = request.args.get('medicamento_nome')
 
         connection = get_db_connection()
         cursor = connection.cursor()
@@ -152,10 +149,10 @@ class MedicamentoResource(Resource):
         # Executar a consulta passando os parâmetros necessários
         cursor.execute(query, {
             "ref_cursor": ref_cursor,
-            "categoria": categoria_id,
-            "motivo": motivo_id,
-            "status": status_id,
-            "medicamento": medicamento_nome
+            "categoria": categoria,
+            "motivo": motivo,
+            "status": status,
+            "medicamento": medicamento
         })
 
         # Obter os resultados do cursor retornado
@@ -184,9 +181,24 @@ class StatusResource(Resource):
     @ns.doc('list_status')
     @ns.marshal_list_with(status_model)
     def get(self):
+        status = request.args.get('status_id')
+
         connection = get_db_connection()
         cursor = connection.cursor()
-        cursor.execute("SELECT id_status, descricao, motivo FROM rm93069.status")
+
+        query = """
+            BEGIN
+                :ref_cursor := get_status(:status);
+            END;
+        """
+
+        ref_cursor = cursor.var(oracledb.CURSOR)
+
+        cursor.execute(query, {
+            "ref_cursor": ref_cursor,
+            "status": status,
+        })
+
         rows = cursor.fetchall()
 
         status_list = []
@@ -261,9 +273,24 @@ class FornecedorResource(Resource):
     @ns.doc('list_fornecedores')
     @ns.marshal_list_with(fornecedores_model)
     def get(self):
+        fornecedor = request.args.get('fornecedor_id')
+
         connection = get_db_connection()
         cursor = connection.cursor()
-        cursor.execute("SELECT id_fornecedor, nome, telefone, email FROM rm93069.fornecedores")
+
+        query = """
+            BEGIN
+                :ref_cursor := get_fornecedores(:fornecedor);
+            END;
+        """
+
+        ref_cursor = cursor.var(oracledb.CURSOR)
+
+        cursor.execute(query, {
+            "ref_cursor": ref_cursor,
+            "fornecedor": fornecedor,
+        })
+
         rows = cursor.fetchall()
 
         fornecedores = []
@@ -339,9 +366,26 @@ class MaterialResource(Resource):
     @ns.doc('list_materiais')
     @ns.marshal_list_with(materiais_model)
     def get(self):
+        fornecedor = request.args.get('fornecedor_id')
+        material = request.args.get('material_id')
+
         connection = get_db_connection()
         cursor = connection.cursor()
-        cursor.execute("SELECT id_material, f.nome, descricao FROM rm93069.materiais m join rm93069.fornecedores f on m.id_fornecedor = f.id_fornecedor")
+
+        query = """
+            BEGIN
+                :ref_cursor := get_materiais(:material, :fornecedor);
+            END;
+        """
+
+        ref_cursor = cursor.var(oracledb.CURSOR)
+
+        cursor.execute(query, {
+            "ref_cursor": ref_cursor,
+            "material": material,
+            "fornecedor": fornecedor,
+        })
+
         rows = cursor.fetchall()
 
         materiais = []
@@ -416,9 +460,24 @@ class CategoriaResource(Resource):
     @ns.doc('list_categoria')
     @ns.marshal_list_with(categorias_model)
     def get(self):
+        categoria = request.args.get('categoria_id')
+
         connection = get_db_connection()
         cursor = connection.cursor()
-        cursor.execute("SELECT id_categoria, descricao FROM rm93069.categorias")
+
+        query = """
+            BEGIN
+                :ref_cursor := get_categorias(:categoria);
+            END;
+        """
+
+        ref_cursor = cursor.var(oracledb.CURSOR)
+
+        cursor.execute(query, {
+            "ref_cursor": ref_cursor,
+            "categoria": categoria,
+        })
+
         rows = cursor.fetchall()
 
         categorias = []
@@ -439,9 +498,24 @@ class MotivoResource(Resource):
     @ns.doc('list_motivo')
     @ns.marshal_list_with(motivos_model)
     def get(self):
+        motivo = request.args.get('motivo_id')
+
         connection = get_db_connection()
         cursor = connection.cursor()
-        cursor.execute("SELECT id_motivo, descricao FROM rm93069.motivos")
+
+        query = """
+            BEGIN
+                :ref_cursor := get_motivos(:motivo);
+            END;
+        """
+
+        ref_cursor = cursor.var(oracledb.CURSOR)
+
+        cursor.execute(query, {
+            "ref_cursor": ref_cursor,
+            "motivo": motivo,
+        })
+
         rows = cursor.fetchall()
 
         motivos = []
@@ -462,9 +536,24 @@ class CargoResource(Resource):
     @ns.doc('list_cargo')
     @ns.marshal_list_with(cargos_model)
     def get(self):
+        cargo = request.args.get('cargo_id')
+
         connection = get_db_connection()
         cursor = connection.cursor()
-        cursor.execute("SELECT id_cargo, descricao FROM rm93069.cargos")
+
+        query = """
+            BEGIN
+                :ref_cursor := get_cargos(:cargo);
+            END;
+        """
+
+        ref_cursor = cursor.var(oracledb.CURSOR)
+
+        cursor.execute(query, {
+            "ref_cursor": ref_cursor,
+            "cargo": cargo,
+        })
+
         rows = cursor.fetchall()
 
         cargos = []
@@ -485,9 +574,24 @@ class DepartamentoResource(Resource):
     @ns.doc('list_departamento')
     @ns.marshal_list_with(departamentos_model)
     def get(self):
+        departamento = request.args.get('departamento_id')
+
         connection = get_db_connection()
         cursor = connection.cursor()
-        cursor.execute("SELECT id_departamento, descricao FROM rm93069.departamentos")
+
+        query = """
+            BEGIN
+                :ref_cursor := get_departamentos(:departamento);
+            END;
+        """
+
+        ref_cursor = cursor.var(oracledb.CURSOR)
+
+        cursor.execute(query, {
+            "ref_cursor": ref_cursor,
+            "departamento": departamento,
+        })
+
         rows = cursor.fetchall()
 
         departamentos = []
@@ -508,14 +612,30 @@ class EstoqueResource(Resource):
     @ns.doc('list_estoque')
     @ns.marshal_list_with(estoque_model)
     def get(self):
+        estoque = request.args.get('estoque_id')
+        medicamento = request.args.get('medicamento_id')
+        responsavel = request.args.get('responsavel_id')
+        tipo_movimentacao = request.args.get('tipo_movimentacao_id')
+
         connection = get_db_connection()
         cursor = connection.cursor()
-        cursor.execute(
-            "SELECT id_estoque, m.nome, r.nome, tm.descricao, quantidade, data, motivo "
-            "FROM rm93069.estoque e "
-            "join rm93069.tipo_movimentacoes tm on e.id_tipo_movimentacao = tm.id_tipo_movimentacao "
-            "join rm93069.responsaveis r on e.id_responsavel = r.id_responsavel "
-            "join rm93069.medicamentos m on e.id_medicamento = m.id_medicamento")
+
+        query = """
+            BEGIN
+                :ref_cursor := get_estoque(:estoque, :medicamento, :responsavel, :tipo_movimentacao);
+            END;
+        """
+
+        ref_cursor = cursor.var(oracledb.CURSOR)
+
+        cursor.execute(query, {
+            "ref_cursor": ref_cursor,
+            "estoque": estoque,
+            "medicamento": medicamento,
+            "responsavel": responsavel,
+            "tipo_movimentacao": tipo_movimentacao,
+        })
+
         rows = cursor.fetchall()
 
         estoque = []
@@ -541,9 +661,24 @@ class EtapasProducaoResource(Resource):
     @ns.doc('list_etapas_producao')
     @ns.marshal_list_with(etapas_producao_model)
     def get(self):
+        etapa = request.args.get('etapa_id')
+
         connection = get_db_connection()
         cursor = connection.cursor()
-        cursor.execute("SELECT id_etapa, descricao, prazo_estimado FROM rm93069.etapas_producao")
+
+        query = """
+            BEGIN
+                :ref_cursor := get_etapas_producao(:etapa);
+            END;
+        """
+
+        ref_cursor = cursor.var(oracledb.CURSOR)
+
+        cursor.execute(query, {
+            "ref_cursor": ref_cursor,
+            "etapa": etapa,
+        })
+
         rows = cursor.fetchall()
 
         etapas_producao = []
@@ -565,13 +700,28 @@ class ProducaoResource(Resource):
     @ns.doc('list_producao')
     @ns.marshal_list_with(producao_model)
     def get(self):
+        producao = request.args.get('producao_id')
+        medicamento = request.args.get('medicamento_id')
+        etapa = request.args.get('etapa_id')
+
         connection = get_db_connection()
         cursor = connection.cursor()
-        cursor.execute(
-            "SELECT id_producao, m.nome, ep.descricao, data_inicio, data_fim_prevista, data_fim_real "
-            "FROM rm93069.producao p "
-            "join rm93069.medicamentos m on p.id_medicamento = m.id_medicamento "
-            "join rm93069.etapas_producao ep on p.id_etapa = ep.id_etapa")
+
+        query = """
+            BEGIN
+                :ref_cursor := get_producao(:producao, :medicamento, :etapa);
+            END;
+        """
+
+        ref_cursor = cursor.var(oracledb.CURSOR)
+
+        cursor.execute(query, {
+            "ref_cursor": ref_cursor,
+            "producao": producao,
+            "medicamento": medicamento,
+            "etapa": etapa,
+        })
+
         rows = cursor.fetchall()
 
         producao = []
@@ -596,13 +746,28 @@ class EntradasPrevistasResource(Resource):
     @ns.doc('list_entradas_previstas')
     @ns.marshal_list_with(entradas_previstas_model)
     def get(self):
+        entrada_prevista = request.args.get('entrada_prevista_id')
+        material = request.args.get('material_id')
+        medicamento = request.args.get('medicamento_id')
+
         connection = get_db_connection()
         cursor = connection.cursor()
-        cursor.execute(
-            "SELECT id_entrada_prevista, ma.descricao, m.nome, quantidade, data_prevista "
-            "FROM rm93069.entradas_previstas ep "
-            "join rm93069.medicamentos m on ep.id_medicamento = m.id_medicamento "
-            "join rm93069.materiais ma on ep.id_material = ma.id_material")
+
+        query = """
+            BEGIN
+                :ref_cursor := get_entradas_previstas(:entrada_prevista, :material, :medicamento);
+            END;
+        """
+
+        ref_cursor = cursor.var(oracledb.CURSOR)
+
+        cursor.execute(query, {
+            "ref_cursor": ref_cursor,
+            "entrada_prevista": entrada_prevista,
+            "material": material,
+            "medicamento": medicamento,
+        })
+
         rows = cursor.fetchall()
 
         entradas_previstas = []
@@ -626,13 +791,30 @@ class AtrasosProducaoResource(Resource):
     @ns.doc('list_atrasos_produção')
     @ns.marshal_list_with(atrasos_producao_model)
     def get(self):
+        atraso = request.args.get('atraso_id')
+        producao = request.args.get('producao_id')
+        medicamento = request.args.get('medicamento_id')
+        etapa = request.args.get('etapa_id')
+
         connection = get_db_connection()
         cursor = connection.cursor()
-        cursor.execute("SELECT id_atraso, m.nome, ep.descricao, dias_atraso, motivo "
-                       "FROM rm93069.atrasos_producao ap "
-                       "join rm93069.producao p on p.id_producao = ap.id_producao "
-                       "join rm93069.medicamentos m on p.id_medicamento = m.id_medicamento "
-                       "join rm93069.etapas_producao ep on p.id_etapa = ep.id_etapa")
+
+        query = """
+            BEGIN
+                :ref_cursor := get_materiais(:atraso, :producao, :medicamento, :etapa);
+            END;
+        """
+
+        ref_cursor = cursor.var(oracledb.CURSOR)
+
+        cursor.execute(query, {
+            "ref_cursor": ref_cursor,
+            "atraso": atraso,
+            "producao": producao,
+            "medicamento": medicamento,
+            "etapa": etapa,
+        })
+
         rows = cursor.fetchall()
 
         atrasos_producao = []
@@ -663,8 +845,7 @@ class ChatBotResource(Resource):
         bot_response = bot.get_response(user_message)
         
         return {"response": bot_response}
-    
-# Ponto de entrada da aplicação
+
 if __name__ == '__main__':
     app.run(debug=True)
 
