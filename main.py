@@ -199,7 +199,7 @@ class StatusResource(Resource):
             "status": status,
         })
 
-        rows = cursor.fetchall()
+        rows = ref_cursor.getvalue().fetchall()
 
         status_list = []
         for row in rows:
@@ -797,7 +797,7 @@ class EntradasPrevistasResource(Resource):
         return entradas_previstas
 
 # Atrasos Produção
-@ns.route('/atrasos_produção')
+@ns.route('/atrasos_producao')
 class AtrasosProducaoResource(Resource):
     @ns.doc('list_atrasos_produção')
     @ns.marshal_list_with(atrasos_producao_model)
@@ -812,7 +812,7 @@ class AtrasosProducaoResource(Resource):
 
         query = """
             BEGIN
-                :ref_cursor := get_materiais(:atraso, :producao, :medicamento, :etapa);
+                :ref_cursor := get_atrasos_producao(:atraso, :producao, :medicamento, :etapa);
             END;
         """
 
