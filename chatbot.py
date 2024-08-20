@@ -10,6 +10,7 @@ from tensorflow.keras.models import load_model
 
 class ChatBot:
     def __init__(self):
+        nltk.data.path.clear() 
         nltk.download('punkt')
         nltk.download('wordnet')
 
