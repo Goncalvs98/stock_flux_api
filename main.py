@@ -532,7 +532,7 @@ class MotivoResource(Resource):
         motivos = []
         for row in rows:
             motivo = {
-                "ID Motivo": row[0],
+                "Id": row[0],
                 "Descrição": row[1],
             }
             motivos.append(motivo)
@@ -695,9 +695,9 @@ class EtapasProducaoResource(Resource):
         etapas_producao = []
         for row in rows:
             etapa = {
-                "ID Etapa": row[0],
+                "Id": row[0],
                 "Descrição": row[1],
-                "Prazo Estimado (dias)": row[2],
+                "Prazo Estimado": row[2],
             }
             etapas_producao.append(etapa)
 
