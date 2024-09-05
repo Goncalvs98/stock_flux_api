@@ -199,7 +199,7 @@ class StatusResource(Resource):
             "status": status,
         })
 
-        rows = cursor.fetchall()
+        rows = ref_cursor.getvalue().fetchall()
 
         status_list = []
         for row in rows:
@@ -532,7 +532,7 @@ class MotivoResource(Resource):
         motivos = []
         for row in rows:
             motivo = {
-                "ID Motivo": row[0],
+                "Id": row[0],
                 "Descrição": row[1],
             }
             motivos.append(motivo)
@@ -565,7 +565,7 @@ class CargoResource(Resource):
             "cargo": cargo,
         })
 
-        rows = cursor.fetchall()
+        rows = ref_cursor.getvalue().fetchall()
 
         cargos = []
         for row in rows:
@@ -603,7 +603,7 @@ class DepartamentoResource(Resource):
             "departamento": departamento,
         })
 
-        rows = cursor.fetchall()
+        rows = ref_cursor.getvalue().fetchall()
 
         departamentos = []
         for row in rows:
@@ -647,7 +647,7 @@ class EstoqueResource(Resource):
             "tipo_movimentacao": tipo_movimentacao,
         })
 
-        rows = cursor.fetchall()
+        rows = ref_cursor.getvalue().fetchall()
 
         estoque = []
         for row in rows:
@@ -690,14 +690,14 @@ class EtapasProducaoResource(Resource):
             "etapa": etapa,
         })
 
-        rows = cursor.fetchall()
+        rows = ref_cursor.getvalue().fetchall()
 
         etapas_producao = []
         for row in rows:
             etapa = {
-                "ID Etapa": row[0],
+                "Id": row[0],
                 "Descrição": row[1],
-                "Prazo Estimado (dias)": row[2],
+                "Prazo Estimado": row[2],
             }
             etapas_producao.append(etapa)
 
@@ -733,7 +733,7 @@ class ProducaoResource(Resource):
             "etapa": etapa,
         })
 
-        rows = cursor.fetchall()
+        rows = ref_cursor.getvalue().fetchall()
 
         producao = []
         for row in rows:
@@ -779,7 +779,7 @@ class EntradasPrevistasResource(Resource):
             "medicamento": medicamento,
         })
 
-        rows = cursor.fetchall()
+        rows = ref_cursor.getvalue().fetchall()
 
         entradas_previstas = []
         for row in rows:
@@ -797,7 +797,7 @@ class EntradasPrevistasResource(Resource):
         return entradas_previstas
 
 # Atrasos Produção
-@ns.route('/atrasos_produção')
+@ns.route('/atrasos_producao')
 class AtrasosProducaoResource(Resource):
     @ns.doc('list_atrasos_produção')
     @ns.marshal_list_with(atrasos_producao_model)
@@ -812,7 +812,7 @@ class AtrasosProducaoResource(Resource):
 
         query = """
             BEGIN
-                :ref_cursor := get_materiais(:atraso, :producao, :medicamento, :etapa);
+                :ref_cursor := get_atrasos_producao(:atraso, :producao, :medicamento, :etapa);
             END;
         """
 
@@ -826,7 +826,7 @@ class AtrasosProducaoResource(Resource):
             "etapa": etapa,
         })
 
-        rows = cursor.fetchall()
+        rows = ref_cursor.getvalue().fetchall()
 
         atrasos_producao = []
         for row in rows:

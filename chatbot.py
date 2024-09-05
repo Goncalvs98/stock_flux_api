@@ -11,6 +11,7 @@ nltk.download('punkt')
 
 class ChatBot:
     def __init__(self):
+        nltk.data.path.clear() 
         nltk.download('punkt')
         nltk.download('wordnet')
 
