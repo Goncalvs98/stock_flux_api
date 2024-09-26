@@ -3,7 +3,11 @@ from flask_restx import Api, Resource, fields
 from flask_cors import CORS
 import oracledb
 import json
+import logging
 from chatbot import ChatBot  # Importa a classe ChatBot
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 api = Api(app, version='1.0', title='API StockFlux',
@@ -121,6 +125,50 @@ def get_db_connection():
     credentials = load_credentials()
     connection = oracledb.connect(user=credentials['user'], password=credentials['password'], dsn=credentials['dsn'])
     return connection
+
+# Medicamentos
+@ns.route('/medicamentos/id')
+class MedicamentoIDResource(Resource):
+    @ns.doc('get_medicamento_id')
+    def get(self):
+        # Obter o nome do medicamento a partir dos parâmetros da URL
+        nome_medicamento = request.args.get('nome_medicamento')
+        logger.info("Medicamento: " + nome_medicamento)
+
+        # Garantir que o nome do medicamento foi fornecido
+        if not nome_medicamento:
+            return {'error': 'O nome do medicamento é obrigatório.'}, 400
+
+        # Conectar ao banco de dados
+        connection = get_db_connection()
+        cursor = connection.cursor()
+
+        # Definir a query SQL para buscar o id_medicamento
+        query = """
+            SELECT id_medicamento
+            FROM rm93069.medicamentos
+            WHERE nome = :nome_medicamento
+        """
+
+        # Executar a query com o nome do medicamento como parâmetro
+        cursor.execute(query, {"nome_medicamento": nome_medicamento})
+
+        # Obter o resultado da consulta
+        row = cursor.fetchone()
+
+        # Verificar se o medicamento foi encontrado
+        if row:
+            medicamento_id = {"id_medicamento": row[0]}, 200
+            logger.info("Medicamento Id: " + str(medicamento_id))
+        else:
+            medicamento_id = {"error": "Medicamento não encontrado"}, 400
+
+        # Fechar a conexão e o cursor
+        cursor.close()
+        connection.close()
+
+        # Retornar o resultado
+        return medicamento_id
 
 # Medicamentos
 @ns.route('/medicamentos')
@@ -627,6 +675,7 @@ class EstoqueResource(Resource):
         medicamento = request.args.get('medicamento_id')
         responsavel = request.args.get('responsavel_id')
         tipo_movimentacao = request.args.get('tipo_movimentacao_id')
+        logger.info("Medicamento: " + medicamento)
 
         connection = get_db_connection()
         cursor = connection.cursor()
@@ -664,6 +713,8 @@ class EstoqueResource(Resource):
 
         cursor.close()
         connection.close()
+        
+        logger.info("Medicamento: " + str(estoque))
         return estoque
 
 # Etapas Produção
