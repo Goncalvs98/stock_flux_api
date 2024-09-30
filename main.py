@@ -131,35 +131,36 @@ class MedicamentoIDResource(Resource):
         nome_medicamento = request.args.get('nome_medicamento')
 
         # Garantir que o nome do medicamento foi fornecido
-        if not nome_medicamento:
-            return {'error': 'O nome do medicamento é obrigatório.'}, 400
+        if not nome_medicamento or not isinstance(nome_medicamento, str) or nome_medicamento.strip() == '':
+            return {'error': 'O nome do medicamento é obrigatório e deve ser uma string válida.'}, 400
 
-        # Conectar ao banco de dados
-        connection = get_db_connection()
-        cursor = connection.cursor()
+        try:
+            # Conectar ao banco de dados com context manager
+            with get_db_connection() as connection:
+                cursor = connection.cursor()
 
-        # Definir a query SQL para buscar o id_medicamento
-        query = """
-            SELECT id_medicamento
-            FROM rm93069.medicamentos
-            WHERE nome = :nome_medicamento
-        """
+                # Definir a query SQL para buscar o id_medicamento
+                query = """
+                    SELECT id_medicamento
+                    FROM rm93069.medicamentos
+                    WHERE nome = :nome_medicamento
+                """
 
-        # Executar a query com o nome do medicamento como parâmetro
-        cursor.execute(query, {"nome_medicamento": nome_medicamento})
+                # Executar a query com o nome do medicamento como parâmetro
+                cursor.execute(query, {"nome_medicamento": nome_medicamento})
 
-        # Obter o resultado da consulta
-        row = cursor.fetchone()
+                # Obter o resultado da consulta
+                row = cursor.fetchone()
 
-        # Verificar se o medicamento foi encontrado
-        if row:
-            medicamento_id = {"id_medicamento": row[0]}, 200
-        else:
-            medicamento_id = {"error": "Medicamento não encontrado"}, 400
+                # Verificar se o medicamento foi encontrado
+                if row:
+                    medicamento_id = {"id_medicamento": row[0]}, 200
+                else:
+                    medicamento_id = {"error": "Medicamento não encontrado"}, 404
 
-        # Fechar a conexão e o cursor
-        cursor.close()
-        connection.close()
+        except Exception as e:
+            # Retornar uma mensagem de erro se algo der errado
+            return {'error': f'Ocorreu um erro ao processar a solicitação: {str(e)}'}, 500
 
         # Retornar o resultado
         return medicamento_id

@@ -4,6 +4,7 @@ import requests
 import pickle
 import numpy as np
 import nltk
+from datetime import datetime
 from nltk.stem import WordNetLemmatizer
 from tensorflow.keras.models import load_model
 from transformers import pipeline
@@ -15,6 +16,7 @@ class ChatBot:
         # Carregue os intents do arquivo JSON com a codificação UTF-8
         with open('intents.json', encoding='utf-8') as json_data:
             self.intents = json.load(json_data)
+
 
         # Carregue os intents do arquivo JSON com a codificação UTF-8
         self.intents = json.loads(open('intents.json', encoding='utf-8').read())
@@ -29,21 +31,17 @@ class ChatBot:
         response_id = requests.get(url)
 
         if response_id.status_code == 200:
-            # Extrai o conteúdo JSON da resposta
             data = response_id.json()
             
-            # Verifica se a resposta é uma tupla (provavelmente um dicionário e o status 200)
-            if isinstance(data, tuple):
-                # Pega o primeiro elemento da tupla (que deve ser o dicionário com 'id_medicamento')
+            if isinstance(data, list) and len(data) > 0:
                 medicamento_data = data[0]
-            else:
-                # Se não for uma tupla, assume que data já é o dicionário esperado
+            elif isinstance(data, dict):
                 medicamento_data = data
+            else:
+                return None
     
-        # Acessa o valor de 'id_medicamento' se ele estiver no dicionário
         medicamento_id = medicamento_data.get('id_medicamento')
-            
-        # Verifica se medicamento_id é válido antes de gerar a URL
+        
         if medicamento_id:
             url_get_estoque = f'http://localhost:5000/api/estoque?medicamento_id={medicamento_id}'
             response_get_estoque = requests.get(url_get_estoque)
@@ -88,17 +86,52 @@ class ChatBot:
 
     def get_response(self, message):
         ints = self.predict_class(message)
+        
         try:
             tag_identificada = self.identificar_intencao_com_ia(message, self.medicamentos)
 
             if tag_identificada:
                 resposta = self.get_estoque(tag_identificada)
+
                 if resposta:
-                    ints = self.predict_class(resposta)
-            pass
-        finally:
-            res = self._get_response_from_intent(ints)
-            return res
+                    if isinstance(resposta, list) and len(resposta) > 0:
+                        mensagem = f"Informações sobre o medicamento {tag_identificada}:\n\n"
+                        
+                        for item in resposta:
+                            medicamento_nome = item.get('Medicamento', 'Nome não especificado')
+                            responsavel_nome = item.get('Responsável', 'Responsável não especificado')
+                            tipo_descricao = item.get('Tipo Movimentação', 'Descrição não especificada')
+                            quantidade = item.get('Quantidade', 'Quantidade não especificada')
+                            data = item.get('Data', 'Data não especificada')
+                            motivo = item.get('Motivo', 'Não especificado')
+
+                            # Formatar a data se ela existir
+                            if data != 'Data não especificada':
+                                data_formatada = datetime.strptime(data, '%Y-%m-%dT%H:%M:%S').strftime('%d de %B de %Y')
+                            else:
+                                data_formatada = data
+
+                            # Montando a mensagem formatada
+                            mensagem += (
+                                f"  Medicamento: {medicamento_nome}\n"
+                                f"  Responsável/Local: {responsavel_nome}\n"
+                                f"  Tipo/Descrição: {tipo_descricao}\n"
+                                f"  Quantidade: {quantidade}\n"
+                                f"  Data: {data_formatada}\n"
+                                f"  Motivo: {motivo}\n"
+                                "------------------------------\n\n"
+                            )
+                        
+                        return mensagem
+                    
+                    else:
+                        return f"Não foi possível encontrar informações sobre o medicamento {tag_identificada}."
+            
+        except Exception as e:
+            print(f"Erro ao processar a mensagem: {e}")
+        
+        res = self._get_response_from_intent(ints)
+        return res
 
     def _get_response_from_intent(self, intents_list):
         if len(intents_list) == 0:
