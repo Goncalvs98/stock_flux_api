@@ -142,7 +142,7 @@ class MedicamentoIDResource(Resource):
                 # Definir a query SQL para buscar o id_medicamento
                 query = """
                     SELECT id_medicamento
-                    FROM rm93069.medicamentos
+                    FROM rm93069.medicamento
                     WHERE nome = :nome_medicamento
                 """
 
@@ -157,6 +157,7 @@ class MedicamentoIDResource(Resource):
                     medicamento_id = {"id_medicamento": row[0]}, 200
                 else:
                     medicamento_id = {"error": "Medicamento não encontrado"}, 404
+
 
         except Exception as e:
             # Retornar uma mensagem de erro se algo der errado
@@ -185,7 +186,7 @@ class MedicamentoResource(Resource):
                 :ref_cursor := get_medicamentos(:categoria, :motivo, :status, :medicamento);
             END;
         """
-
+    
         # Criação de um cursor de referência para armazenar o resultado
         ref_cursor = cursor.var(oracledb.CURSOR)
 
@@ -201,6 +202,9 @@ class MedicamentoResource(Resource):
         # Obter os resultados do cursor retornado
         rows = ref_cursor.getvalue().fetchall()
 
+        if not rows:
+            return {"error": "Nenhum medicamento encontrado"}, 404
+
         medicamentos = []
         for row in rows:
             medicamento = {
@@ -214,9 +218,46 @@ class MedicamentoResource(Resource):
             }
             medicamentos.append(medicamento)
 
+            # Verifica se o medicamento foi descontinuado (por exemplo, pelo status)
+            if row[6] == 'Descontinuado':  # Suponha que 'Status' esteja na posição 6
+                nome = row[2]  # Nome do medicamento
+                dosagem = row[4]  # Quantidade mínima (adaptar se necessário)
+                fabricante = "Fabricante"  # Você pode obter essa informação de outra tabela, se necessário
+                data_discontinuacao = "Data aqui"  # Obtenha essa informação de uma coluna se disponível
+
+                # Função para gerar o comunicado
+                def gerar_comunicado(nome, dosagem, fabricante, data_discontinuacao):
+                    comunicado = f"""
+                    Comunicado sobre a descontinuação definitiva da fabricação/importação do medicamento {nome} {dosagem} mg
+                    
+                    São Paulo, {data_discontinuacao} — Em compromisso com a transparência junto aos pacientes e profissionais de saúde, a {fabricante} informa que o medicamento {nome}, na dosagem de {dosagem} mg será descontinuado definitivamente. Este produto não será mais comercializado pela {fabricante}.
+
+                    Destacamos que a descontinuação se refere à dosagem de {dosagem} mg, sem impactar outras apresentações do medicamento, que estão sendo comercializadas normalmente.
+
+                    Orientamos que pacientes e médicos conversem sobre a melhor conduta para a continuidade do tratamento.
+                    
+                    A Agência Nacional de Vigilância Sanitária (ANVISA) foi comunicada sobre essa situação conforme requerido na legislação vigente.
+
+                    Para mais informações, estamos à disposição por meio do Serviço de Atendimento ao Consumidor pelo telefone 0800-XXX-XXXX ou através do site {fabricante}/fale-conosco.
+
+                    Atenciosamente,
+
+                    {fabricante}
+                    """
+                    return comunicado
+
+                comunicado = gerar_comunicado(nome, dosagem, fabricante, data_discontinuacao)
+                cursor.close()
+                connection.close()
+
+                # Retornar o comunicado como resposta
+                return {"comunicado": comunicado}, 200
+
+        # Fechar o cursor e a conexão se não for encontrado nenhum medicamento descontinuado
         cursor.close()
         connection.close()
         return medicamentos
+
 
 # Status
 @ns.route('/status')
