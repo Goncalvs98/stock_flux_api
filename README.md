@@ -155,7 +155,3 @@ Se desejar contribuir com melhorias no projeto, siga os seguintes passos:
 ## Licença
 
 Este projeto está licenciado sob a licença MIT - veja o arquivo [LICENSE](LICENSE) para mais detalhes.
-
----
-
-Esse `README.md` cobre todos os aspectos principais do projeto, desde como configurá-lo e executá-lo até detalhes sobre a estrutura e as funcionalidades do chatbot. Se houver algum detalhe extra que queira adicionar, como informações específicas sobre a API ou links de referências, fique à vontade para personalizá-lo!
